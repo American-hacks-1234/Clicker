@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Click Counter</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 80px;
+  }
+  h1 {
+    margin-bottom: 20px;
+  }
+  button {
+    padding: 15px 30px;
+    font-size: 20px;
+    cursor: pointer;
+    background: #1b3a63;
+    color: white;
+    border: none;
+    border-radius: 8px;
+  }
+  button:hover {
+    background: #244f88;
+  }
+  #count {
+    font-size: 40px;
+    margin-top: 25px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Click Counter</h1>
+
+<button id="clickBtn">Click Me</button>
+
+<div id="count">0</div>
+
+<script>
+  // Load saved count or start at 0
+  let count = Number(localStorage.getItem("clickCount")) || 0;
+
+  const countDisplay = document.getElementById("count");
+  const button = document.getElementById("clickBtn");
+
+  // Show initial count
+  countDisplay.textContent = count;
+
+  // When button is clicked
+  button.addEventListener("click", () => {
+    count++;
+    countDisplay.textContent = count;
+    localStorage.setItem("clickCount", count);
+  });
+</script>
+
+</body>
+</html>
 

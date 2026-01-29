@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Skyline Bank</title>
+<title>Milkyway Bank</title>
 <style>
   body { font-family: Arial, sans-serif; background:#eef2f7; margin:0; }
-  header { background:#1b3a63; color:white; padding:15px 25px; display:flex; justify-content:space-between; }
+  header { background:#1b3a63; color:white; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; }
   main { max-width:1000px; margin:30px auto; padding:0 20px; }
   .card { background:white; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom:20px; }
   .flex { display:flex; flex-wrap:wrap; gap:20px; }
@@ -26,7 +26,7 @@
 <body>
 
 <header>
-  <h1>Skyline Bank</h1>
+  <h1>Milkyway Bank</h1>
   <div id="currentUserDisplay"></div>
 </header>
 
@@ -105,7 +105,7 @@
   </div>
 
   <div class="card">
-    <h2>Pending Requests</h2>
+    <h2>Pending Deposit / Withdraw Requests</h2>
     <table>
       <thead>
         <tr>
@@ -135,7 +135,7 @@
 <script>
 /* ===== ADMIN CONFIG ===== */
 const ADMIN_USERNAME = "Admin67";
-const ADMIN_PASS_B64 = "NjUzdHI3ODR5cjc5USQq";
+const ADMIN_PASS_B64 = "NjUzdHI3ODR5cjc5USQq"; // Base64 of 653tr784yr79Q$*
 
 /* ===== DATABASE ===== */
 const accounts = [
@@ -150,7 +150,7 @@ const accounts = [
   }
 ];
 
-const pendingRequests = [];
+const pendingRequests = []; // { account, type, amount }
 
 let currentUser = null;
 let isAdmin = false;
@@ -168,31 +168,33 @@ function getAdminAccount() { return accounts[0]; }
 function toBase64(str) { return btoa(str); }
 
 function showSection(id) {
-  authSection.classList.add("hidden");
-  userSection.classList.add("hidden");
-  adminSection.classList.add("hidden");
+  document.getElementById("authSection").classList.add("hidden");
+  document.getElementById("userSection").classList.add("hidden");
+  document.getElementById("adminSection").classList.add("hidden");
   document.getElementById(id).classList.remove("hidden");
 }
 
 function refreshUserUI() {
-  uName.textContent = currentUser.firstName + " " + currentUser.lastName;
-  uAcct.textContent = currentUser.accountNumber;
-  uBal.textContent = money(currentUser.balance);
-  uStatusTag.textContent = currentUser.frozen ? "Frozen" : "Active";
-  uStatusTag.className = "tag" + (currentUser.frozen ? " frozen" : "");
-  currentUserDisplay.textContent = "Signed in: " + currentUser.username;
+  document.getElementById("uName").textContent = currentUser.firstName + " " + currentUser.lastName;
+  document.getElementById("uAcct").textContent = currentUser.accountNumber;
+  document.getElementById("uBal").textContent = money(currentUser.balance);
+  const tag = document.getElementById("uStatusTag");
+  tag.textContent = currentUser.frozen ? "Frozen" : "Active";
+  tag.className = "tag" + (currentUser.frozen ? " frozen" : "");
+  document.getElementById("currentUserDisplay").textContent = "Signed in: " + currentUser.username;
 }
 
 function refreshAdminHeader() {
   const adminAcc = getAdminAccount();
-  adminAcctNum.textContent = adminAcc.accountNumber;
-  adminBal.textContent = money(adminAcc.balance);
-  currentUserDisplay.textContent = "Admin: " + ADMIN_USERNAME;
+  document.getElementById("adminAcctNum").textContent = adminAcc.accountNumber;
+  document.getElementById("adminBal").textContent = money(adminAcc.balance);
+  document.getElementById("currentUserDisplay").textContent = "Admin: " + ADMIN_USERNAME;
 }
 
 function refreshPending() {
-  pendingBody.innerHTML = "";
-  pendingRequests.forEach((req, i) => {
+  const body = document.getElementById("pendingBody");
+  body.innerHTML = "";
+  pendingRequests.forEach((req, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${req.account}</td>
@@ -201,7 +203,7 @@ function refreshPending() {
       <td><button class="approveBtn">Approve</button></td>
       <td><button class="denyBtn">Deny</button></td>
     `;
-    pendingBody.appendChild(tr);
+    body.appendChild(tr);
 
     tr.querySelector(".approveBtn").onclick = () => {
       const acc = findAcct(req.account);
@@ -209,27 +211,28 @@ function refreshPending() {
 
       if (req.type === "deposit") {
         acc.balance += req.amount;
-      } else {
+      } else if (req.type === "withdraw") {
         if (acc.balance >= req.amount) {
           acc.balance -= req.amount;
         }
       }
-
-      pendingRequests.splice(i, 1);
+      pendingRequests.splice(index, 1);
       refreshPending();
       refreshAdminTable();
       refreshAdminHeader();
     };
 
     tr.querySelector(".denyBtn").onclick = () => {
-      pendingRequests.splice(i, 1);
+      pendingRequests.splice(index, 1);
       refreshPending();
     };
   });
 }
 
 function refreshAdminTable() {
-  adminAccountsBody.innerHTML = "";
+  const body = document.getElementById("adminAccountsBody");
+  const status = document.getElementById("adminStatus");
+  body.innerHTML = "";
   accounts.forEach(acc => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -243,44 +246,48 @@ function refreshAdminTable() {
         <button class="setBal">Set</button>
         <button class="freezeBtn">${acc.frozen ? "Unfreeze" : "Freeze"}</button>
       </td>`;
-    adminAccountsBody.appendChild(tr);
+    body.appendChild(tr);
 
     const inp = tr.querySelector(".balInput");
     tr.querySelector(".setBal").onclick = () => {
       const val = parseFloat(inp.value);
       if (isNaN(val) || val < 0) {
-        adminStatus.textContent = "Enter a valid non-negative balance.";
+        status.textContent = "Enter a valid non-negative balance.";
+        status.className = "status";
         return;
       }
       acc.balance = val;
-      adminStatus.textContent = "Balance updated.";
-      adminStatus.className = "status ok";
+      status.textContent = "Balance updated.";
+      status.className = "status ok";
       refreshAdminTable();
       refreshAdminHeader();
     };
 
     tr.querySelector(".freezeBtn").onclick = () => {
       acc.frozen = !acc.frozen;
-      adminStatus.textContent = "Account updated.";
-      adminStatus.className = "status ok";
+      status.textContent = "Account updated.";
+      status.className = "status ok";
       refreshAdminTable();
     };
   });
 }
 
 /* ===== SIGN UP ===== */
-btnSignUp.onclick = () => {
-  const first = suFirst.value.trim();
-  const last = suLast.value.trim();
-  const user = suUser.value.trim();
-  const pass = suPass.value;
+document.getElementById("btnSignUp").onclick = () => {
+  const first = document.getElementById("suFirst").value.trim();
+  const last = document.getElementById("suLast").value.trim();
+  const user = document.getElementById("suUser").value.trim();
+  const pass = document.getElementById("suPass").value;
+  const st = document.getElementById("suStatus");
 
   if (!first || !last || !user || !pass) {
-    suStatus.textContent = "All fields required.";
+    st.textContent = "All fields required.";
+    st.className = "status";
     return;
   }
   if (findUser(user)) {
-    suStatus.textContent = "Username taken.";
+    st.textContent = "Username taken.";
+    st.className = "status";
     return;
   }
 
@@ -295,77 +302,90 @@ btnSignUp.onclick = () => {
     frozen: false
   });
 
-  suStatus.textContent = "Account created! #" + acctNum;
-  suStatus.className = "status ok";
-  suFirst.value = suLast.value = suUser.value = suPass.value = "";
+  st.textContent = "Account created! #" + acctNum;
+  st.className = "status ok";
+  document.getElementById("suFirst").value =
+    document.getElementById("suLast").value =
+    document.getElementById("suUser").value =
+    document.getElementById("suPass").value = "";
 };
 
 /* ===== USER LOGIN ===== */
-btnLogin.onclick = () => {
-  const user = liUser.value.trim();
-  const pass = liPass.value;
+document.getElementById("btnLogin").onclick = () => {
+  const user = document.getElementById("liUser").value.trim();
+  const pass = document.getElementById("liPass").value;
+  const st = document.getElementById("liStatus");
   const acc = findUser(user);
 
   if (!acc || acc.password !== pass || acc.username === ADMIN_USERNAME) {
-    liStatus.textContent = "Invalid login.";
+    st.textContent = "Invalid login.";
+    st.className = "status";
     return;
   }
 
   currentUser = acc;
   isAdmin = false;
+  st.textContent = "";
   showSection("userSection");
   refreshUserUI();
 };
 
 /* ===== ADMIN LOGIN ===== */
-btnAdminLogin.onclick = () => {
-  const user = adUser.value.trim();
-  const pass = adPass.value;
+document.getElementById("btnAdminLogin").onclick = () => {
+  const user = document.getElementById("adUser").value.trim();
+  const pass = document.getElementById("adPass").value;
+  const st = document.getElementById("adStatus");
 
   if (user !== ADMIN_USERNAME) {
-    adStatus.textContent = "Invalid admin login.";
+    st.textContent = "Invalid admin login.";
+    st.className = "status";
     return;
   }
 
   if (toBase64(pass) !== ADMIN_PASS_B64) {
-    adStatus.textContent = "Invalid admin login.";
+    st.textContent = "Invalid admin login.";
+    st.className = "status";
     return;
   }
 
   isAdmin = true;
   currentUser = null;
+  st.textContent = "";
   showSection("adminSection");
   refreshAdminTable();
   refreshPending();
   refreshAdminHeader();
 };
 
-/* ===== LOGOUT ===== */
-btnLogoutUser.onclick = () => {
+/* ===== LOGOUTS ===== */
+document.getElementById("btnLogoutUser").onclick = () => {
   currentUser = null;
   isAdmin = false;
-  currentUserDisplay.textContent = "";
+  document.getElementById("currentUserDisplay").textContent = "";
   showSection("authSection");
 };
-btnLogoutAdmin.onclick = () => {
+document.getElementById("btnLogoutAdmin").onclick = () => {
   currentUser = null;
   isAdmin = false;
-  currentUserDisplay.textContent = "";
+  document.getElementById("currentUserDisplay").textContent = "";
   showSection("authSection");
 };
 
 /* ===== USER REQUEST: DEPOSIT / WITHDRAW ===== */
-btnReqDW.onclick = () => {
+document.getElementById("btnReqDW").onclick = () => {
   if (!currentUser) return;
-  const amt = parseFloat(uAmount.value);
-  const type = uType.value;
+  const amt = parseFloat(document.getElementById("uAmount").value);
+  const type = document.getElementById("uType").value;
+  const st = document.getElementById("uDWStatus");
 
   if (currentUser.frozen) {
-    uDWStatus.textContent = "Account frozen.";
+    st.textContent = "Account frozen.";
+    st.className = "status";
     return;
   }
   if (isNaN(amt) || amt <= 0) {
-    uDWStatus.textContent = "Invalid amount.";
+    st.textContent = "Invalid amount.";
+    st.className = "status";
     return;
   }
 
@@ -375,41 +395,47 @@ btnReqDW.onclick = () => {
     amount: amt
   });
 
-  uDWStatus.textContent = "Request submitted for admin approval.";
-  uDWStatus.className = "status ok";
-  uAmount.value = "";
-  refreshPending();
+  st.textContent = "Request submitted for admin approval.";
+  st.className = "status ok";
+  document.getElementById("uAmount").value = "";
+  if (isAdmin) refreshPending();
 };
 
-/* ===== TRANSFER (still instant) ===== */
-btnTransfer.onclick = () => {
+/* ===== TRANSFER (instant, with $0.10 fee) ===== */
+document.getElementById("btnTransfer").onclick = () => {
   if (!currentUser) return;
-  const tgt = tgtAcct.value.trim();
-  const amt = parseFloat(tAmount.value);
+  const tgt = document.getElementById("tgtAcct").value.trim();
+  const amt = parseFloat(document.getElementById("tAmount").value);
+  const st = document.getElementById("uTransferStatus");
   const fee = 0.10;
 
   if (currentUser.frozen) {
-    uTransferStatus.textContent = "Account frozen.";
+    st.textContent = "Account frozen.";
+    st.className = "status";
     return;
   }
   if (!tgt || isNaN(amt) || amt <= 0) {
-    uTransferStatus.textContent = "Invalid input.";
+    st.textContent = "Invalid input.";
+    st.className = "status";
     return;
   }
 
   const targetAcc = findAcct(tgt);
   if (!targetAcc) {
-    uTransferStatus.textContent = "Target not found.";
+    st.textContent = "Target not found.";
+    st.className = "status";
     return;
   }
   if (targetAcc.frozen) {
-    uTransferStatus.textContent = "Target frozen.";
+    st.textContent = "Target frozen.";
+    st.className = "status";
     return;
   }
 
   const total = amt + fee;
   if (currentUser.balance < total) {
-    uTransferStatus.textContent = "Insufficient funds.";
+    st.textContent = "Insufficient funds.";
+    st.className = "status";
     return;
   }
 
@@ -418,7 +444,14 @@ btnTransfer.onclick = () => {
   targetAcc.balance += amt;
   adminAcc.balance += fee;
 
-  uTransferStatus.textContent = "Transfer complete.";
-  uTransferStatus.className = "status ok";
-  tgtAcct.value = tAmount.value = "";
-  refresh
+  st.textContent = "Transfer complete.";
+  st.className = "status ok";
+  document.getElementById("tgtAcct").value = "";
+  document.getElementById("tAmount").value = "";
+  refreshUserUI();
+  refreshAdminHeader();
+};
+</script>
+
+</body>
+</html>

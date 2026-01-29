@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Milkyway Bank</title>
+<title>Skyline Bank</title>
 <style>
   body { font-family: Arial, sans-serif; background:#eef2f7; margin:0; }
   header { background:#1b3a63; color:white; padding:15px 25px; display:flex; justify-content:space-between; }
@@ -26,7 +26,7 @@
 <body>
 
 <header>
-  <h1>Milkyway Bank</h1>
+  <h1>Skyline Bank</h1>
   <div id="currentUserDisplay"></div>
 </header>
 
@@ -74,14 +74,14 @@
 
   <div class="flex">
     <div class="card">
-      <h2>Deposit / Withdraw</h2>
+      <h2>Deposit / Withdraw Request</h2>
       <label>Amount</label><input id="uAmount" type="number" step="0.01">
       <label>Type</label>
       <select id="uType">
         <option value="deposit">Deposit</option>
         <option value="withdraw">Withdraw</option>
       </select>
-      <button id="btnReqDW">Submit</button>
+      <button id="btnReqDW">Submit Request</button>
       <div class="status" id="uDWStatus"></div>
     </div>
 
@@ -105,6 +105,18 @@
   </div>
 
   <div class="card">
+    <h2>Pending Requests</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Account #</th><th>Type</th><th>Amount</th><th>Approve</th><th>Deny</th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
     <h2>All Accounts</h2>
     <table>
       <thead>
@@ -123,7 +135,7 @@
 <script>
 /* ===== ADMIN CONFIG ===== */
 const ADMIN_USERNAME = "Admin67";
-const ADMIN_PASS_B64 = "NjUzdHI3ODR5cjc5USQq"; // Base64 of 653tr784yr79Q$*
+const ADMIN_PASS_B64 = "NjUzdHI3ODR5cjc5USQq";
 
 /* ===== DATABASE ===== */
 const accounts = [
@@ -137,6 +149,8 @@ const accounts = [
     password: null
   }
 ];
+
+const pendingRequests = [];
 
 let currentUser = null;
 let isAdmin = false;
@@ -176,6 +190,44 @@ function refreshAdminHeader() {
   currentUserDisplay.textContent = "Admin: " + ADMIN_USERNAME;
 }
 
+function refreshPending() {
+  pendingBody.innerHTML = "";
+  pendingRequests.forEach((req, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${req.account}</td>
+      <td>${req.type}</td>
+      <td>$${money(req.amount)}</td>
+      <td><button class="approveBtn">Approve</button></td>
+      <td><button class="denyBtn">Deny</button></td>
+    `;
+    pendingBody.appendChild(tr);
+
+    tr.querySelector(".approveBtn").onclick = () => {
+      const acc = findAcct(req.account);
+      if (!acc) return;
+
+      if (req.type === "deposit") {
+        acc.balance += req.amount;
+      } else {
+        if (acc.balance >= req.amount) {
+          acc.balance -= req.amount;
+        }
+      }
+
+      pendingRequests.splice(i, 1);
+      refreshPending();
+      refreshAdminTable();
+      refreshAdminHeader();
+    };
+
+    tr.querySelector(".denyBtn").onclick = () => {
+      pendingRequests.splice(i, 1);
+      refreshPending();
+    };
+  });
+}
+
 function refreshAdminTable() {
   adminAccountsBody.innerHTML = "";
   accounts.forEach(acc => {
@@ -198,14 +250,12 @@ function refreshAdminTable() {
       const val = parseFloat(inp.value);
       if (isNaN(val) || val < 0) {
         adminStatus.textContent = "Enter a valid non-negative balance.";
-        adminStatus.className = "status";
         return;
       }
       acc.balance = val;
       adminStatus.textContent = "Balance updated.";
       adminStatus.className = "status ok";
       refreshAdminTable();
-      if (currentUser && currentUser.accountNumber === acc.accountNumber) refreshUserUI();
       refreshAdminHeader();
     };
 
@@ -214,7 +264,6 @@ function refreshAdminTable() {
       adminStatus.textContent = "Account updated.";
       adminStatus.className = "status ok";
       refreshAdminTable();
-      if (currentUser && currentUser.accountNumber === acc.accountNumber) refreshUserUI();
     };
   });
 }
@@ -268,7 +317,7 @@ btnLogin.onclick = () => {
   refreshUserUI();
 };
 
-/* ===== ADMIN LOGIN (BASE64 CHECK) ===== */
+/* ===== ADMIN LOGIN ===== */
 btnAdminLogin.onclick = () => {
   const user = adUser.value.trim();
   const pass = adPass.value;
@@ -287,10 +336,11 @@ btnAdminLogin.onclick = () => {
   currentUser = null;
   showSection("adminSection");
   refreshAdminTable();
+  refreshPending();
   refreshAdminHeader();
 };
 
-/* ===== LOGOUTS ===== */
+/* ===== LOGOUT ===== */
 btnLogoutUser.onclick = () => {
   currentUser = null;
   isAdmin = false;
@@ -304,7 +354,7 @@ btnLogoutAdmin.onclick = () => {
   showSection("authSection");
 };
 
-/* ===== DEPOSIT / WITHDRAW ===== */
+/* ===== USER REQUEST: DEPOSIT / WITHDRAW ===== */
 btnReqDW.onclick = () => {
   if (!currentUser) return;
   const amt = parseFloat(uAmount.value);
@@ -319,23 +369,19 @@ btnReqDW.onclick = () => {
     return;
   }
 
-  if (type === "deposit") {
-    currentUser.balance += amt;
-  } else {
-    if (currentUser.balance < amt) {
-      uDWStatus.textContent = "Insufficient funds.";
-      return;
-    }
-    currentUser.balance -= amt;
-  }
+  pendingRequests.push({
+    account: currentUser.accountNumber,
+    type: type,
+    amount: amt
+  });
 
-  uDWStatus.textContent = "Success.";
+  uDWStatus.textContent = "Request submitted for admin approval.";
   uDWStatus.className = "status ok";
   uAmount.value = "";
-  refreshUserUI();
+  refreshPending();
 };
 
-/* ===== TRANSFER WITH $0.10 FEE ===== */
+/* ===== TRANSFER (still instant) ===== */
 btnTransfer.onclick = () => {
   if (!currentUser) return;
   const tgt = tgtAcct.value.trim();
@@ -375,11 +421,4 @@ btnTransfer.onclick = () => {
   uTransferStatus.textContent = "Transfer complete.";
   uTransferStatus.className = "status ok";
   tgtAcct.value = tAmount.value = "";
-  refreshUserUI();
-  refreshAdminHeader();
-};
-</script>
-
-</body>
-</html>
-
+  refresh

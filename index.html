@@ -1,140 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Clicker Game</title>
+<title>Click Counter</title>
 <style>
-  body { font-family: Arial; text-align: center; margin-top: 40px; }
-  #count { font-size: 40px; margin: 20px; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 80px;
+  }
+  h1 {
+    margin-bottom: 20px;
+  }
   button {
-    padding: 12px 25px;
-    font-size: 18px;
-    margin: 5px;
+    padding: 15px 30px;
+    font-size: 20px;
     cursor: pointer;
+    background: #1b3a63;
+    color: white;
+    border: none;
+    border-radius: 8px;
   }
-  .upgradeBox {
-    background: #fff;
-    padding: 15px;
-    width: 300px;
-    margin: auto;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  button:hover {
+    background: #244f88;
   }
-  .upgrade { display: flex; justify-content: space-between; margin: 10px 0; }
+  #count {
+    font-size: 40px;
+    margin-top: 25px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Clicker Game</h1>
+<h1>Click Counter</h1>
 
 <button id="clickBtn">Click Me</button>
+
 <div id="count">0</div>
 
-<div class="upgradeBox">
-  <h2>Upgrades</h2>
-
-  <div class="upgrade">
-    <span>+1 per click</span>
-    <button id="upg1Btn">Buy (<span id="upg1Cost"></span>)</button>
-  </div>
-
-  <div class="upgrade">
-    <span>+5 per click</span>
-    <button id="upg5Btn">Buy (<span id="upg5Cost"></span>)</button>
-  </div>
-
-  <div class="upgrade">
-    <span>Auto-clicker +1/sec</span>
-    <button id="autoBtn">Buy (<span id="autoCost"></span>)</button>
-  </div>
-</div>
-
 <script>
-  function load(key, fallback) {
-    let v = Number(localStorage.getItem(key));
-    return isNaN(v) ? fallback : v;
-  }
-
-  let clicks = load("clicks", 0);
-  let perClick = load("perClick", 1);
-  let autoClickers = load("autoClickers", 0);
-
-  // Balanced starting costs
-  let upg1Cost = load("upg1Cost", 5);
-  let upg5Cost = load("upg5Cost", 25);
-  let autoCost = load("autoCost", 100);
+  // Load saved count or start at 0
+  let count = Number(localStorage.getItem("clickCount")) || 0;
 
   const countDisplay = document.getElementById("count");
-  const upg1CostDisplay = document.getElementById("upg1Cost");
-  const upg5CostDisplay = document.getElementById("upg5Cost");
-  const autoCostDisplay = document.getElementById("autoCost");
+  const button = document.getElementById("clickBtn");
 
-  function save() {
-    localStorage.setItem("clicks", clicks);
-    localStorage.setItem("perClick", perClick);
-    localStorage.setItem("autoClickers", autoClickers);
-    localStorage.setItem("upg1Cost", upg1Cost);
-    localStorage.setItem("upg5Cost", upg5Cost);
-    localStorage.setItem("autoCost", autoCost);
-  }
+  // Show initial count
+  countDisplay.textContent = count;
 
-  function updateUI() {
-    countDisplay.textContent = clicks;
-    upg1CostDisplay.textContent = upg1Cost;
-    upg5CostDisplay.textContent = upg5Cost;
-    autoCostDisplay.textContent = autoCost;
-  }
-
-  document.getElementById("clickBtn").onclick = () => {
-    clicks += perClick;
-    save();
-    updateUI();
-  };
-
-  // +1 per click (cost ×1.5)
-  document.getElementById("upg1Btn").onclick = () => {
-    if (clicks >= upg1Cost) {
-      clicks -= upg1Cost;
-      perClick += 1;
-      upg1Cost = Math.floor(upg1Cost * 1.5);
-      save();
-      updateUI();
-    }
-  };
-
-  // +5 per click (cost ×3)
-  document.getElementById("upg5Btn").onclick = () => {
-    if (clicks >= upg5Cost) {
-      clicks -= upg5Cost;
-      perClick += 5;
-      upg5Cost = Math.floor(upg5Cost * 3);
-      save();
-      updateUI();
-    }
-  };
-
-  // Auto-clicker (cost ×5)
-  document.getElementById("autoBtn").onclick = () => {
-    if (clicks >= autoCost) {
-      clicks -= autoCost;
-      autoClickers += 1;
-      autoCost = Math.floor(autoCost * 5);
-      save();
-      updateUI();
-    }
-  };
-
-  // Auto-clicker loop
-  setInterval(() => {
-    if (autoClickers > 0) {
-      clicks += autoClickers;
-      save();
-      updateUI();
-    }
-  }, 1000);
-
-  updateUI();
+  // When button is clicked
+  button.addEventListener("click", () => {
+    count++;
+    countDisplay.textContent = count;
+    localStorage.setItem("clickCount", count);
+  });
 </script>
 
 </body>
 </html>
+

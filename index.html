@@ -67,20 +67,21 @@
 </div>
 
 <script>
-  // Safe load function (prevents NaN)
+  // Safe load function
   function loadNumber(key, fallback) {
     const value = Number(localStorage.getItem(key));
     return isNaN(value) ? fallback : value;
   }
 
-  // Load saved data safely
+  // Load saved data or defaults
   let clicks = loadNumber("clicks", 0);
   let perClick = loadNumber("perClick", 1);
   let autoClickers = loadNumber("autoClickers", 0);
 
-  let upg1Cost = loadNumber("upg1Cost", 20);
-  let upg5Cost = loadNumber("upg5Cost", 100);
-  let autoCost = loadNumber("autoCost", 250);
+  // Base costs: 1, 5, 10
+  let upg1Cost = loadNumber("upg1Cost", 1);
+  let upg5Cost = loadNumber("upg5Cost", 5);
+  let autoCost = loadNumber("autoCost", 10);
 
   const countDisplay = document.getElementById("count");
   const clickBtn = document.getElementById("clickBtn");
@@ -117,34 +118,34 @@
     updateUI();
   });
 
-  // Upgrade +1 per click
+  // Upgrade +1 per click (cost ×2)
   upg1Btn.addEventListener("click", () => {
     if (clicks >= upg1Cost) {
       clicks -= upg1Cost;
       perClick += 1;
-      upg1Cost = Math.floor(upg1Cost * 1.5);
+      upg1Cost *= 2; // cost scaling
       save();
       updateUI();
     }
   });
 
-  // Upgrade +5 per click
+  // Upgrade +5 per click (cost ×10)
   upg5Btn.addEventListener("click", () => {
     if (clicks >= upg5Cost) {
       clicks -= upg5Cost;
       perClick += 5;
-      upg5Cost = Math.floor(upg5Cost * 1.7);
+      upg5Cost *= 10; // cost scaling
       save();
       updateUI();
     }
   });
 
-  // Auto-clicker
+  // Auto-clicker (cost ×100)
   autoBtn.addEventListener("click", () => {
     if (clicks >= autoCost) {
       clicks -= autoCost;
       autoClickers += 1;
-      autoCost = Math.floor(autoCost * 2);
+      autoCost *= 100; // cost scaling
       save();
       updateUI();
     }

@@ -1,43 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Clicker Game</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 40px;
-  }
-  h1 { margin-bottom: 10px; }
+  body { font-family: Arial; text-align: center; margin-top: 40px; }
   #count { font-size: 40px; margin: 20px; }
   button {
     padding: 12px 25px;
     font-size: 18px;
-    cursor: pointer;
-    background: #1b3a63;
-    color: white;
-    border: none;
-    border-radius: 8px;
     margin: 5px;
+    cursor: pointer;
   }
-  button:hover { background: #244f88; }
   .upgradeBox {
-    background: white;
+    background: #fff;
     padding: 15px;
-    border-radius: 10px;
     width: 300px;
-    margin-top: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    margin: auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   }
-  .upgrade {
-    display: flex;
-    justify-content: space-between;
-    margin: 10px 0;
-  }
+  .upgrade { display: flex; justify-content: space-between; margin: 10px 0; }
 </style>
 </head>
 <body>
@@ -52,47 +35,48 @@
 
   <div class="upgrade">
     <span>+1 per click</span>
-    <button id="upg1Btn">Buy (Cost: <span id="upg1Cost"></span>)</button>
+    <button id="upg1Btn">Buy (<span id="upg1Cost"></span>)</button>
   </div>
 
   <div class="upgrade">
     <span>+5 per click</span>
-    <button id="upg5Btn">Buy (Cost: <span id="upg5Cost"></span>)</button>
+    <button id="upg5Btn">Buy (<span id="upg5Cost"></span>)</button>
   </div>
 
   <div class="upgrade">
-    <span>Auto‑clicker (+1/sec)</span>
-    <button id="autoBtn">Buy (Cost: <span id="autoCost"></span>)</button>
+    <span>Auto-clicker +1/sec</span>
+    <button id="autoBtn">Buy (<span id="autoCost"></span>)</button>
   </div>
 </div>
 
 <script>
-  // Safe load function
-  function loadNumber(key, fallback) {
-    const value = Number(localStorage.getItem(key));
-    return isNaN(value) ? fallback : value;
+  function load(key, fallback) {
+    let v = Number(localStorage.getItem(key));
+    return isNaN(v) ? fallback : v;
   }
 
-  // Load saved data or defaults
-  let clicks = loadNumber("clicks", 0);
-  let perClick = loadNumber("perClick", 1);
-  let autoClickers = loadNumber("autoClickers", 0);
+  let clicks = load("clicks", 0);
+  let perClick = load("perClick", 1);
+  let autoClickers = load("autoClickers", 0);
 
-  // Base costs: 1, 5, 10
-  let upg1Cost = loadNumber("upg1Cost", 1);
-  let upg5Cost = loadNumber("upg5Cost", 5);
-  let autoCost = loadNumber("autoCost", 10);
+  // Balanced starting costs
+  let upg1Cost = load("upg1Cost", 5);
+  let upg5Cost = load("upg5Cost", 25);
+  let autoCost = load("autoCost", 100);
 
   const countDisplay = document.getElementById("count");
-  const clickBtn = document.getElementById("clickBtn");
-
-  const upg1Btn = document.getElementById("upg1Btn");
-  const upg5Btn = document.getElementById("upg5Btn");
-  const autoBtn = document.getElementById("autoBtn");
-
   const upg1CostDisplay = document.getElementById("upg1Cost");
   const upg5CostDisplay = document.getElementById("upg5Cost");
   const autoCostDisplay = document.getElementById("autoCost");
+
+  function save() {
+    localStorage.setItem("clicks", clicks);
+    localStorage.setItem("perClick", perClick);
+    localStorage.setItem("autoClickers", autoClickers);
+    localStorage.setItem("upg1Cost", upg1Cost);
+    localStorage.setItem("upg5Cost", upg5Cost);
+    localStorage.setItem("autoCost", autoCost);
+  }
 
   function updateUI() {
     countDisplay.textContent = clicks;
@@ -101,55 +85,44 @@
     autoCostDisplay.textContent = autoCost;
   }
 
-  function save() {
-    localStorage.setItem("clicks", clicks);
-    localStorage.setItem("perClick", perClick);
-    localStorage.setItem("autoClickers", autoClickers);
-
-    localStorage.setItem("upg1Cost", upg1Cost);
-    localStorage.setItem("upg5Cost", upg5Cost);
-    localStorage.setItem("autoCost", autoCost);
-  }
-
-  // Clicking
-  clickBtn.addEventListener("click", () => {
+  document.getElementById("clickBtn").onclick = () => {
     clicks += perClick;
     save();
     updateUI();
-  });
+  };
 
-  // Upgrade +1 per click (cost ×2)
-  upg1Btn.addEventListener("click", () => {
+  // +1 per click (cost ×1.5)
+  document.getElementById("upg1Btn").onclick = () => {
     if (clicks >= upg1Cost) {
       clicks -= upg1Cost;
       perClick += 1;
-      upg1Cost *= 2; // cost scaling
+      upg1Cost = Math.floor(upg1Cost * 1.5);
       save();
       updateUI();
     }
-  });
+  };
 
-  // Upgrade +5 per click (cost ×10)
-  upg5Btn.addEventListener("click", () => {
+  // +5 per click (cost ×3)
+  document.getElementById("upg5Btn").onclick = () => {
     if (clicks >= upg5Cost) {
       clicks -= upg5Cost;
       perClick += 5;
-      upg5Cost *= 10; // cost scaling
+      upg5Cost = Math.floor(upg5Cost * 3);
       save();
       updateUI();
     }
-  });
+  };
 
-  // Auto-clicker (cost ×100)
-  autoBtn.addEventListener("click", () => {
+  // Auto-clicker (cost ×5)
+  document.getElementById("autoBtn").onclick = () => {
     if (clicks >= autoCost) {
       clicks -= autoCost;
       autoClickers += 1;
-      autoCost *= 100; // cost scaling
+      autoCost = Math.floor(autoCost * 5);
       save();
       updateUI();
     }
-  });
+  };
 
   // Auto-clicker loop
   setInterval(() => {
